@@ -98,7 +98,12 @@ typedef unsigned char UBaseType_t;
  * but 120 kHz at 5V DC and 25 degrees is actually more accurate,
  * from data sheet.
  */
+#if defined( portUSE_WDTO )
 #define portTICK_PERIOD_MS              ( (TickType_t) _BV( portUSE_WDTO + 4 ) )    // Inaccurately assuming 128 kHz Watchdog Timer.
+#else
+#define portTICK_PERIOD_MS              ( ( TickType_t ) 1000 / configTICK_RATE_HZ )
+#endif
+
 
 /*-----------------------------------------------------------*/
 
