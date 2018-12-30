@@ -100,5 +100,8 @@ to exclude the API function. */
 
 #define configMAX(a,b)  ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
 #define configMIN(a,b)  ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a < _b ? _a : _b; })
+	
+#define pdMS_TO_TICKS( xTimeInMs )  ( ( TickType_t ) ( ( ( xTimeInMs ) * configTICK_RATE_HZ ) /  443 ) )  //445
+	
 
 #endif /* FREERTOS_CONFIG_H */

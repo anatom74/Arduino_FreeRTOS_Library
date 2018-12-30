@@ -36,38 +36,75 @@
 extern "C" {
 #endif
 
-// System Tick - Scheduler timer
-// Use the Watchdog timer, and choose the rate at which scheduler interrupts will occur.
 
-#define portUSE_WDTO            WDTO_15MS    // portUSE_WDTO to use the Watchdog Timer for xTaskIncrementTick
+#if defined(__AVR_ATmega640__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega1281__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega2561__)
 
-/* Watchdog period options:     WDTO_15MS
-                                WDTO_30MS
-                                WDTO_60MS
-                                WDTO_120MS
-                                WDTO_250MS
-                                WDTO_500MS
+#ifndef _MEGA_
+#define _MEGA_
+#endif
+// System Tick  - Scheduler timer
+// Prefer to use the Watchdog timer, but also Timer 0, 1, or 3 are ok.
+
+// #define portUSE_WDTO			WDTO_15MS							// portUSE_WDTO to use the Watchdog Timer for xTaskIncrementTick
+
+/* Watchdog period options: 	WDTO_15MS
+								WDTO_30MS
+								WDTO_60MS
+								WDTO_120MS
+								WDTO_250MS
+								WDTO_500MS
 */
-//    xxx Watchdog Timer is 128kHz nominal, but 120 kHz at 5V DC and 25 degrees is actually more accurate, from data sheet.
-#define configTICK_RATE_HZ      ( (TickType_t)( (uint32_t)128000 >> (portUSE_WDTO + 11) ) ) // 2^11 = 2048 WDT scaler for 128kHz Timer
 
-/*-----------------------------------------------------------*/
+//	#define portUSE_TIMER0                                          // portUSE_TIMER0 to use 8 bit Timer0 for xTaskIncrementTick
+//	#define portUSE_TIMER1											// portUSE_TIMER1 to use 16 bit Timer1 for xTaskIncrementTick
+//	#define portUSE_TIMER2                                          // portUSE_TIMER2 to use 8 bit Timer2 using 32,768Hz for xTaskIncrementTick
+#define portUSE_TIMER3											// portUSE_TIMER3 to use 16 bit Timer3 for xTaskIncrementTick
 
-void initVariant(void);
+// Use Timer 2 for a Real Time Clock, if you have a 32kHz watch crystal attached.
+//	#define portUSE_TIMER2_RTC										// portUSE_TIMER2_RTC to use 8 bit RTC Timer2 for system_tick (not xTaskIncrementTick)
 
-void vApplicationIdleHook( void );
 
-void vApplicationMallocFailedHook( void );
-void vApplicationStackOverflowHook( TaskHandle_t xTask, portCHAR *pcTaskName );
+#if defined (portUSE_WDTO)
+//Watchdog Timer is 128kHz nominal, but 120 kHz at 5V DC and 25 degrees is actually more accurate, from data sheet.
+//#define configTICK_RATE_HZ 			( (TickType_t)( (uint32_t)128000 >> (portUSE_WDTO + 11) ) )  // 2^11 = 2048 WDT Scale-factor
 
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
-                                    StackType_t **ppxIdleTaskStackBuffer,
-                                    configSTACK_DEPTH_TYPE *pulIdleTaskStackSize );
-void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
-                                     StackType_t **ppxTimerTaskStackBuffer,
-                                     configSTACK_DEPTH_TYPE *pulTimerTaskStackSize );
+#elif defined (portUSE_TIMER0) || defined (portUSE_TIMER1) || defined (portUSE_TIMER3)
+#define configTICK_RATE_HZ			( (TickType_t) 200 )         	// Use 1000Hz to get mSec timing using Timer1 or Timer3.
 
-/*-----------------------------------------------------------*/
+#endif
+
+
+#if defined (portMEGA_RAM) || (defined (portQUAD_RAM) && !defined (portEXT_RAMFS))
+	// XRAM banks enabled. We have to set the linker to move the heap to XRAM. -> DON'T FORGET TO ADD THESE LINK OPTIONS
+#define configTOTAL_HEAP_SIZE	( (size_t ) (XRAMEND - 0x8000)) // Should be 0xffff - 0x8000 = 32767 for (non malloc) heap in XRAM.
+																// Used for heap_1.c, heap2.c, and heap4.c only, and maximum Array size possible for Heap is 32767.
+#else
+	// There is no XRAM available for the heap.
+#define configTOTAL_HEAP_SIZE	( (size_t ) 0x1200 )
+//	#define configTOTAL_HEAP_SIZE	( (size_t ) 0x1800 )			// 0x1800 = 6144 used for heap_1.c, heap2.c, and heap4.c only, where heap is NOT in XRAM.
+																	// Used for heap_1.c, heap2.c, and heap4.c only, and maximum Array size possible for Heap is 32767.
+#endif
+
+
+#endif
+
+
+
+	void initVariant(void);
+
+	void vApplicationIdleHook(void);
+
+	void vApplicationMallocFailedHook(void);
+	void vApplicationStackOverflowHook(TaskHandle_t xTask, portCHAR *pcTaskName);
+
+	void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+		StackType_t **ppxIdleTaskStackBuffer,
+		configSTACK_DEPTH_TYPE *pulIdleTaskStackSize);
+	void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
+		StackType_t **ppxTimerTaskStackBuffer,
+		configSTACK_DEPTH_TYPE *pulTimerTaskStackSize);
+
+	/*-----------------------------------------------------------*/
 
 #ifdef __cplusplus
 }
