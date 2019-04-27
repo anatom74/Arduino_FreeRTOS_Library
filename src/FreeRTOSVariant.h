@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Phillip Stevens  All Rights Reserved.
+ * Copyright (C) 2019 Phillip Stevens  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -27,15 +27,15 @@
 #ifndef freeRTOSVariant_h
 #define freeRTOSVariant_h
 
-#include <avr/io.h>
-#include <avr/wdt.h>
-
-#include "task.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include <avr/io.h>
+#include <avr/wdt.h>
+
+// System Tick - Scheduler timer
+// Use the Watchdog timer, and choose the rate at which scheduler interrupts will occur.
 
 #if defined(__AVR_ATmega640__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega1281__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega2561__)
 
@@ -54,6 +54,10 @@ extern "C" {
 								WDTO_250MS
 								WDTO_500MS
 */
+
+//    xxx Watchdog Timer is 128kHz nominal, but 120 kHz at 5V DC and 25 degrees is actually more accurate, from data sheet.
+//#define configTICK_RATE_HZ      ( (TickType_t)( (uint32_t)128000 >> (portUSE_WDTO + 11) ) )  // 2^11 = 2048 WDT scaler for 128kHz Timer
+
 
 //	#define portUSE_TIMER0                                          // portUSE_TIMER0 to use 8 bit Timer0 for xTaskIncrementTick
 //	#define portUSE_TIMER1											// portUSE_TIMER1 to use 16 bit Timer1 for xTaskIncrementTick
@@ -89,8 +93,13 @@ extern "C" {
 #endif
 
 
+#ifndef INC_TASK_H
+#include "Arduino_FreeRTOS.h"
+#include "task.h"
+#endif
 
-	void initVariant(void);
+void initVariant(void);
+
 
 	void vApplicationIdleHook(void);
 
@@ -104,7 +113,9 @@ extern "C" {
 		StackType_t **ppxTimerTaskStackBuffer,
 		configSTACK_DEPTH_TYPE *pulTimerTaskStackSize);
 
+
 	/*-----------------------------------------------------------*/
+
 
 #ifdef __cplusplus
 }
